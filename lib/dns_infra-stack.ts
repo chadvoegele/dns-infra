@@ -1,52 +1,46 @@
-import * as cdk from '@aws-cdk/core'
-import * as route53 from '@aws-cdk/aws-route53'
+import * as cdk from 'aws-cdk-lib'
+import * as route53 from 'aws-cdk-lib/aws-route53'
+import { Construct } from 'constructs'
 
 export class DnsInfraStack extends cdk.Stack {
-  constructor (scope: cdk.Construct, id: string, props?: cdk.StackProps) {
+  constructor (scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props)
 
     const domainName = 'voegele.me'
+    const onmicrosoftName = 'thevoegeles.onmicrosoft.com'
     const zone = new route53.PublicHostedZone(this, `${domainName}Zone`, {
       zoneName: domainName
     })
     new route53.MxRecord(this, `${domainName}MX`, {
       zone: zone,
       values: [{
-        hostName: 'in1-smtp.messagingengine.com',
-        priority: 10
-      }, {
-        hostName: 'in2-smtp.messagingengine.com',
-        priority: 20
+        hostName: 'voegele-me.mail.protection.outlook.com',
+        priority: 0
       }]
     })
     new route53.TxtRecord(this, `${domainName}SPF`, {
       zone: zone,
-      values: ['v=spf1 include:spf.messagingengine.com ?all']
+      values: ['v=spf1 include:spf.protection.outlook.com -all']
     })
     new route53.TxtRecord(this, `${domainName}DMARC`, {
       zone: zone,
       recordName: `_dmarc.${domainName}`,
-      values: [`v=DMARC1; p=none; sp=quarantine; rua=mailto:mailauth-reports@${domainName}`]
+      values: [`v=DMARC1; p=quarantine; rua=mailto:mailauth-rua@${domainName}; ruf=mailto:mailauth-ruf@${domainName}`]
     })
-    new route53.CnameRecord(this, `${domainName}FM1`, {
+    new route53.CnameRecord(this, `${domainName}DKIM1`, {
       zone: zone,
-      recordName: `fm1._domainkey.${domainName}`,
-      domainName: `fm1.${domainName}.dkim.fmhosted.com`
+      recordName: `selector1._domainkey.${domainName}`,
+      domainName: `selector1-${domainName.replace('.', '-')}._domainkey.${onmicrosoftName}`
     })
-    new route53.CnameRecord(this, `${domainName}FM2`, {
+    new route53.CnameRecord(this, `${domainName}DKIM2`, {
       zone: zone,
-      recordName: `fm2._domainkey.${domainName}`,
-      domainName: `fm2.${domainName}.dkim.fmhosted.com`
+      recordName: `selector2._domainkey.${domainName}`,
+      domainName: `selector2-${domainName.replace('.', '-')}._domainkey.${onmicrosoftName}`
     })
-    new route53.CnameRecord(this, `${domainName}FM3`, {
+    new route53.CnameRecord(this, `${domainName}AUTO`, {
       zone: zone,
-      recordName: `fm3._domainkey.${domainName}`,
-      domainName: `fm3.${domainName}.dkim.fmhosted.com`
-    })
-    new route53.CnameRecord(this, `${domainName}MESMTP`, {
-      zone: zone,
-      recordName: `mesmtp._domainkey.${domainName}`,
-      domainName: `mesmtp.${domainName}.dkim.fmhosted.com`
+      recordName: `autodiscover.${domainName}`,
+      domainName: 'autodiscover.outlook.com'
     })
     const outputZoneIdName = `${domainName.replace('.', '')}ZoneId`
     new cdk.CfnOutput(this, outputZoneIdName, { value: zone.hostedZoneId, exportName: outputZoneIdName })
