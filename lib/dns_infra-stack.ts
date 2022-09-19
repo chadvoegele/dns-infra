@@ -7,40 +7,45 @@ export class DnsInfraStack extends cdk.Stack {
     super(scope, id, props)
 
     const domainName = 'voegele.me'
-    const onmicrosoftName = 'thevoegeles.onmicrosoft.com'
     const zone = new route53.PublicHostedZone(this, `${domainName}Zone`, {
       zoneName: domainName
     })
+    const DKIM_P = process.env.DKIM_P
+    if (!DKIM_P) {
+      throw new Error('DKIM_P not specified!')
+    }
     new route53.MxRecord(this, `${domainName}MX`, {
       zone: zone,
       values: [{
-        hostName: 'voegele-me.mail.protection.outlook.com',
-        priority: 0
+        hostName: 'ASPMX.L.GOOGLE.COM',
+        priority: 1
+      }, {
+        hostName: 'ALT1.ASPMX.L.GOOGLE.COM',
+        priority: 5
+      }, {
+        hostName: 'ALT2.ASPMX.L.GOOGLE.COM',
+        priority: 5
+      }, {
+        hostName: 'ALT3.ASPMX.L.GOOGLE.COM',
+        priority: 10
+      }, {
+        hostName: 'ALT4.ASPMX.L.GOOGLE.COM',
+        priority: 10
       }]
     })
     new route53.TxtRecord(this, `${domainName}SPF`, {
       zone: zone,
-      values: ['v=spf1 include:spf.protection.outlook.com -all']
+      values: ['v=spf1 include:_spf.google.com ~all']
     })
     new route53.TxtRecord(this, `${domainName}DMARC`, {
       zone: zone,
       recordName: `_dmarc.${domainName}`,
-      values: [`v=DMARC1; p=quarantine; rua=mailto:mailauth-rua@${domainName}; ruf=mailto:mailauth-ruf@${domainName}`]
+      values: [`v=DMARC1; p=quarantine; rua=mailto:mailauth-rua@${domainName};`]
     })
-    new route53.CnameRecord(this, `${domainName}DKIM1`, {
+    new route53.TxtRecord(this, `${domainName}DKIM`, {
       zone: zone,
-      recordName: `selector1._domainkey.${domainName}`,
-      domainName: `selector1-${domainName.replace('.', '-')}._domainkey.${onmicrosoftName}`
-    })
-    new route53.CnameRecord(this, `${domainName}DKIM2`, {
-      zone: zone,
-      recordName: `selector2._domainkey.${domainName}`,
-      domainName: `selector2-${domainName.replace('.', '-')}._domainkey.${onmicrosoftName}`
-    })
-    new route53.CnameRecord(this, `${domainName}AUTO`, {
-      zone: zone,
-      recordName: `autodiscover.${domainName}`,
-      domainName: 'autodiscover.outlook.com'
+      recordName: `google._domainkey.${domainName}`,
+      values: [`v=DKIM1; k=rsa; p=${DKIM_P}`]
     })
     const outputZoneIdName = `${domainName.replace('.', '')}ZoneId`
     new cdk.CfnOutput(this, outputZoneIdName, { value: zone.hostedZoneId, exportName: outputZoneIdName })
