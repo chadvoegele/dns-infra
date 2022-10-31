@@ -10,6 +10,11 @@ export class DnsInfraStack extends cdk.Stack {
     const zone = new route53.PublicHostedZone(this, `${domainName}Zone`, {
       zoneName: domainName
     })
+    new route53.ARecord(this, `${domainName}localhost`, {
+      zone: zone,
+      recordName: 'localhost',
+      target: route53.RecordTarget.fromIpAddresses('127.0.0.1')
+    })
     const DKIM_P = process.env.DKIM_P
     if (!DKIM_P) {
       throw new Error('DKIM_P not specified!')
