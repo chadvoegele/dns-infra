@@ -3,7 +3,7 @@ import * as route53 from 'aws-cdk-lib/aws-route53'
 import { Construct } from 'constructs'
 
 export class DnsInfraStack extends cdk.Stack {
-  constructor (scope: Construct, id: string, props?: cdk.StackProps) {
+  constructor (scope: Construct, id: string, secrets: { [key: string]: string }, props?: cdk.StackProps) {
     super(scope, id, props)
 
     const domainName = 'voegele.me'
@@ -15,9 +15,9 @@ export class DnsInfraStack extends cdk.Stack {
       recordName: 'localhost',
       target: route53.RecordTarget.fromIpAddresses('127.0.0.1')
     })
-    const DKIM_P = process.env.DKIM_P
-    if (!DKIM_P) {
-      throw new Error('DKIM_P not specified!')
+    const dkimP = secrets.dkimP
+    if (!dkimP) {
+      throw new Error('dkimP not specified!')
     }
     new route53.MxRecord(this, `${domainName}MX`, {
       zone: zone,
@@ -50,7 +50,7 @@ export class DnsInfraStack extends cdk.Stack {
     new route53.TxtRecord(this, `${domainName}DKIM`, {
       zone: zone,
       recordName: `google._domainkey.${domainName}`,
-      values: [`v=DKIM1; k=rsa; p=${DKIM_P}`]
+      values: [`v=DKIM1; k=rsa; p=${dkimP}`]
     })
     const outputZoneIdName = `${domainName.replace('.', '')}ZoneId`
     new cdk.CfnOutput(this, outputZoneIdName, { value: zone.hostedZoneId, exportName: outputZoneIdName })
