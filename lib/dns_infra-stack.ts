@@ -20,6 +20,11 @@ export class DnsInfraStack extends cdk.Stack {
       recordName: 'home',
       domainName: `ddns.${domainName}`
     })
+    new route53.TxtRecord(this, `${domainName}HomeAcmeChallenge`, {
+      zone: zone,
+      recordName: '_acme-challenge.home',
+      values: ['placeholder']
+    })
     new route53.CnameRecord(this, `${domainName}HomeWildcard`, {
       zone: zone,
       recordName: '*.home',

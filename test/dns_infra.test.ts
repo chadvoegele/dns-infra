@@ -8,5 +8,5 @@ test('Stack', () => {
   const stack = new DnsInfra.DnsInfraStack(app, 'MyTestStack', secrets)
   const template = Template.fromStack(stack)
   template.resourceCountIs('AWS::Route53::HostedZone', 1)
-  template.resourceCountIs('AWS::Route53::RecordSet', 7)
+  template.resourceCountIs('AWS::Route53::RecordSet', 8)
 })
