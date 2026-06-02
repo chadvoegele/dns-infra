@@ -30,6 +30,16 @@ export class DnsInfraStack extends cdk.Stack {
       recordName: '*.home',
       domainName: `ddns.${domainName}`
     })
+    new route53.ARecord(this, `${domainName}ChaddevLan`, {
+      zone: zone,
+      recordName: 'chaddev.lan',
+      target: route53.RecordTarget.fromIpAddresses('10.0.0.98')
+    })
+    new route53.ARecord(this, `${domainName}ChaddevLanWildcard`, {
+      zone: zone,
+      recordName: '*.chaddev.lan',
+      target: route53.RecordTarget.fromIpAddresses('10.0.0.98')
+    })
     const dkimP = secrets.dkimP
     if (!dkimP) {
       throw new Error('dkimP not specified!')
